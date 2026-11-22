@@ -13,6 +13,12 @@ from rclpy.node import Node
 from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import Image
 
+try:  # Gazebo transport, for the Gazebo GUI sonar panel.
+    from gz.msgs.image_pb2 import Image as GzImage, RGB_INT8
+    from gz.transport import Node as GzNode
+except ImportError:  # pragma: no cover - only without Gazebo's Python bindings
+    GzNode = None
+
 # Amber/Gold colour map: black -> brown -> amber -> gold -> pale yellow.
 AMBER_STOPS = (
     (0.00, (0, 0, 0)),
@@ -189,14 +195,35 @@ class FanRenderer:
                 round(self.origin[1] - radius*self.scale*np.cos(bearing)))
 
 
+def gz_image(pixels, sec, nanosec):
+    """The fan image as a Gazebo RGB image message."""
+    message = GzImage()
+    message.header.stamp.sec, message.header.stamp.nsec = sec, nanosec
+    message.height, message.width = pixels.shape[:2]
+    message.step = pixels.shape[1] * 3
+    message.pixel_format_type = RGB_INT8
+    message.data = pixels.tobytes()
+    return message
+
+
 class SonarView(Node):
     def __init__(self):
         super().__init__("sonar_view")
         for name, value in [("gain_db", 0.0), ("dynamic_range_db", 35.0), ("palette", "amber")]:
             self.declare_parameter(name, value)
+        # Gazebo topic for the GUI panel, published directly: a ROS -> Gazebo
+        # bridge for these large images could stall after a few minutes.
+        gz_topic = self.declare_parameter("gz_topic", "").value
         self.add_on_set_parameters_callback(self.validate)
         self.renderer = FanRenderer()
         self.publisher = self.create_publisher(Image, "sonar_rgb", 1)
+        self.gz_node = self.gz_publisher = None
+        if gz_topic:
+            if GzNode is None:
+                self.get_logger().error("Gazebo Python bindings missing; no sonar image in the Gazebo GUI")
+            else:
+                self.gz_node = GzNode()
+                self.gz_publisher = self.gz_node.advertise(gz_topic, GzImage)
         self.subscription = self.create_subscription(
             ProjectedSonarImage, "sonar_raw", self.convert, qos_profile_sensor_data)
 
@@ -231,6 +258,8 @@ class SonarView(Node):
         output.encoding, output.step = "rgb8", pixels.shape[1]*3
         output.data = pixels.tobytes()
         self.publisher.publish(output)
+        if self.gz_publisher is not None:
+            self.gz_publisher.publish(gz_image(pixels, message.header.stamp.sec, message.header.stamp.nanosec))
 
 
 def main():

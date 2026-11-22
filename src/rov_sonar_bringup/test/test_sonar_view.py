@@ -86,3 +86,14 @@ def test_range_rings_are_round_numbers():
     assert view.ring_step(10.0) == 2
     assert view.ring_step(30.0) == 5
     assert view.ring_step(4.0) == 1
+
+
+@pytest.mark.skipif(view.GzNode is None, reason="Gazebo Python bindings not available")
+def test_gz_image_for_gui_panel():
+    pixels = np.zeros((4, 6, 3), np.uint8)
+    pixels[1, 2] = (10, 20, 30)
+    message = view.gz_image(pixels, 12, 500)
+    assert (message.width, message.height, message.step) == (6, 4, 18)
+    assert message.pixel_format_type == view.RGB_INT8
+    assert message.header.stamp.sec == 12 and message.header.stamp.nsec == 500
+    assert message.data[(1 * 6 + 2) * 3:(1 * 6 + 2) * 3 + 3] == bytes((10, 20, 30))

@@ -111,16 +111,10 @@ def setup(context):
                 "gain_db": float(arg("sonar_gain_db")),
                 "dynamic_range_db": float(arg("sonar_dynamic_range_db")),
                 "palette": arg("sonar_palette"),
+                # Straight to the Gazebo GUI's "Sonar" panel (no image bridge).
+                "gz_topic": scene.SONAR_FAN_TOPIC,
             }
         ],
-    )
-
-    # ROS -> Gazebo, for the "Sonar" panel of the Gazebo GUI.
-    sonar_panel_bridge = Node(
-        package="ros_gz_bridge",
-        executable="parameter_bridge",
-        name="sonar_panel_bridge",
-        arguments=[f"{scene.SONAR_FAN_TOPIC}@sensor_msgs/msg/Image]gz.msgs.Image"],
     )
 
     sonar_window = Node(
@@ -157,7 +151,6 @@ def setup(context):
         camera_bridge,
         robot_state,
         sonar_view,
-        sonar_panel_bridge,
         sonar_window,
         rviz,
     ]

@@ -171,7 +171,7 @@ Display parameters change only the rendered image, not the raw echoes. Changing 
 
 | Topic | Content |
 | --- | --- |
-| `/rov/sonar/fan_image` | Sonar fan image (range arcs, sector lines, range labels; the robot's left is on the image's left) |
+| `/rov/sonar/fan_image` | Sonar fan image (range arcs, sector lines, range labels; the robot's left is on the image's left). `sonar_view` publishes it both as a ROS topic and directly on Gazebo transport for the GUI panel |
 | `/model/bluerov2_heavy_multibeam_sonar/multibeam_sonar/sonar_image_raw` | Raw echoes (`marine_acoustic_msgs/ProjectedSonarImage`, float32 dB) |
 | `/model/bluerov2_heavy_multibeam_sonar/multibeam_sonar/sonar_image` | The sensor's built-in colour preview |
 | `/model/bluerov2_heavy_multibeam_sonar/multibeam_sonar/point_cloud` | Sonar point cloud |
@@ -190,7 +190,7 @@ In terminal B press `x` to disarm, then `Ctrl+C`. Close the Gazebo window or pre
 
 - **Scene generation**: `launch/scene.py` reads the model and world from `rov_sonar_description`, applies the sonar profile, camera settings and neutral-buoyancy ballast, and embeds the robot directly in the generated world file (no spawn service needed). The installed model and world files are not modified. To add a profile, edit `SONAR_PROFILES`.
 - **Sonar sensor parameters**: `<gz:multibeam_sonar>` in `src/rov_sonar_description/models/bluerov2_heavy_multibeam_sonar/model.sdf` (frequency, bandwidth, source level, field of view, ...).
-- **Sonar imaging**: `src/rov_sonar_bringup/scripts/sonar_view.py` (palette in `AMBER_STOPS`, page and text colours at the top of the file); tests in `test/test_sonar_view.py`.
+- **Sonar imaging**: `src/rov_sonar_bringup/scripts/sonar_view.py` (publishes the fan image to the Gazebo GUI itself: a ROS → Gazebo `ros_gz_bridge` for these large images stalled after several minutes) (palette in `AMBER_STOPS`, page and text colours at the top of the file); tests in `test/test_sonar_view.py`.
 - **Interface style**: window theme in `WINDOW_STYLE` (`launch/scene.py`); panel layout in the `<gui>` block of `src/rov_sonar_description/worlds/shallow_underwater.world`; the axes indicator (`RovViewAxes`) and image panels (`RovImageView`) in `src/rov_sonar_gui`; the GPU view's underwater look (fog density and colours) in `extras/parallels/underwater_view.cc` (rebuild with `./extras/parallels/build.sh`).
 - **Vehicle stack**: `src/rov_sonar_control/launch/vehicle.launch.py` (Gazebo bridges → wait for IMU → ArduSub → MAVROS).
 - **Main differences from POSIM**: Gazebo is started directly and the robot is embedded in the world file, so `ros_gz_sim`'s launch file and spawn service are no longer needed; topics `/tutorial/*` were renamed to `/rov/*`; the QGroundControl camera stream is optional (off by default); new `full` sonar profile and `sonar_rate` / `sonar_palette` arguments.
