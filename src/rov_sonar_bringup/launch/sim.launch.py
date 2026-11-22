@@ -58,7 +58,9 @@ def setup(context):
 
     partition = arg("gz_partition") or f"rov_sonar_{os.getpid()}"
     gz = ["gz", "sim", "-v", arg("verbose")]
-    if arg("gui") != "true":
+    if arg("gui") == "true":
+        gz += ["--gui-config", str(scene.gui_config(description, folder / "gui.config", engine="ogre2"))]
+    else:
         gz.append("-s")
     if arg("paused") != "true":
         gz.append("-r")
@@ -122,9 +124,10 @@ def setup(context):
     )
 
     sonar_window = Node(
-        package="rqt_image_view",
-        executable="rqt_image_view",
-        arguments=[scene.SONAR_FAN_TOPIC],
+        package="rov_sonar_bringup",
+        executable="sonar_window.py",
+        name="sonar_window",
+        remappings=[("image", scene.SONAR_FAN_TOPIC)],
         additional_env={"QT_QPA_PLATFORM": "xcb"},
         condition=IfCondition(LaunchConfiguration("sonar_window")),
     )
@@ -171,8 +174,8 @@ ARGUMENTS = {
     "compute_backend": ("cpu", ["auto", "cpu", "wgpu", "cuda"], "Sonar beamforming backend"),
     "sonar_gain_db": ("3.0", None, "Display gain (dB), -30..30"),
     "sonar_dynamic_range_db": ("35.0", None, "Display dynamic range (dB), 20..100"),
-    "sonar_palette": ("amber", ["amber", "gray"], "Sonar fan colour map"),
-    "sonar_window": ("false", ["true", "false"], "Open an rqt_image_view window on the fan image"),
+    "sonar_palette": ("amber", ["amber", "gray"], "Sonar fan colour map (amber: Amber/Gold)"),
+    "sonar_window": ("false", ["true", "false"], "Open a standalone sonar window"),
     "gui": ("true", ["true", "false"], "Run the Gazebo GUI in-process (false: server only)"),
     "rviz": ("false", ["true", "false"], "Open RViz"),
     "ardusub": ("true", ["true", "false"], "Run ArduSub SITL and MAVROS"),

@@ -19,7 +19,7 @@ Visualization Manager:
       Enabled: true
       Cell Size: 1
       Plane Cell Count: 20
-      Color: 100; 110; 120
+      Color: 190; 190; 190
       Alpha: 0.25
     - Class: rviz_default_plugins/Image
       Name: Camera
@@ -50,7 +50,7 @@ Visualization Manager:
   Global Options:
     Fixed Frame: bluerov2_heavy_multibeam_sonar/base_link
     Frame Rate: 15
-    Background Color: 35; 42; 48
+    Background Color: 255; 255; 255
   Enabled: true
   Tools:
     - Class: rviz_default_plugins/MoveCamera

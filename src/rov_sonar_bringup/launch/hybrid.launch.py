@@ -45,12 +45,12 @@ def _sim_launch():
 
 def setup(context):
     runtime = Path(os.environ.get("ROV_SONAR_PARALLELS_RUNTIME", ""))
-    plugin = runtime / "build" / "libgz-rendering-ogre.so"
-    if not plugin.is_file():
-        raise RuntimeError(
-            f"Parallels display plugin not found: {plugin}. "
-            "Build it with extras/parallels/build.sh and set ROV_SONAR_PARALLELS_RUNTIME."
-        )
+    for plugin in ("libgz-rendering-ogre.so", "RovUnderwaterView.so"):
+        if not (runtime / "build" / plugin).is_file():
+            raise RuntimeError(
+                f"Parallels display plugin not found: {runtime / 'build' / plugin}. "
+                "Build it with extras/parallels/build.sh and set ROV_SONAR_PARALLELS_RUNTIME."
+            )
     share = Path(get_package_share_directory("rov_sonar_bringup"))
     description = get_package_share_directory("rov_sonar_description")
     temporary = tempfile.TemporaryDirectory(prefix="rov-sonar-gui-")
@@ -77,6 +77,9 @@ def setup(context):
         additional_env={
             "GZ_PARTITION": partition,
             "GZ_RENDERING_PLUGIN_PATH": str(runtime / "build"),
+            "GZ_GUI_PLUGIN_PATH": str(runtime / "build")
+            + ":"
+            + os.environ.get("GZ_GUI_PLUGIN_PATH", ""),
             # The GUI loads a static water visual in place of Wave Sim's.
             "GZ_SIM_SYSTEM_PLUGIN_PATH": str(runtime / "build")
             + ":"
@@ -103,5 +106,5 @@ def setup(context):
 
 
 def generate_launch_description():
-    arguments = _sim_launch().arguments(skip=HYBRID_ONLY, sonar_window="true")
+    arguments = _sim_launch().arguments(skip=HYBRID_ONLY)
     return LaunchDescription(arguments + [OpaqueFunction(function=setup)])

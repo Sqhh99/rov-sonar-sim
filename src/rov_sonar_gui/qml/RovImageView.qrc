@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="RovImageView">
+    <file>RovImageView.qml</file>
+  </qresource>
+</RCC>

@@ -77,17 +77,38 @@ def test_world_embeds_robot_at_pose(tmp_path):
     assert world.find("plugin[@name='custom::MultibeamSonarSystem']") is not None
     # The custom sensor type keeps its namespace through re-serialisation.
     assert robots[0].find(f".//sensor[@{GZ}type='multibeam_sonar']") is not None
-    topics = {p.findtext("topic") for p in world.findall("gui/plugin[@filename='ImageDisplay']")}
+    topics = {p.findtext("topic") for p in world.findall("gui/plugin[@filename='RovImageView']")}
     assert topics == {scene.CAMERA_TOPIC, scene.SONAR_FAN_TOPIC}
 
 
+def gui_root(path):
+    return ET.fromstring(f"<root>{path.read_text()}</root>")
+
+
 def test_gui_config_for_ogre1_display(tmp_path):
-    text = scene.gui_config(DESCRIPTION, tmp_path / "gui.config").read_text()
-    root = ET.fromstring(f"<root>{text}</root>")
+    root = gui_root(scene.gui_config(DESCRIPTION, tmp_path / "gui.config"))
     filenames = [p.get("filename") for p in root.findall("plugin")]
     assert "posim_underwater_gui" not in filenames
-    assert "MinimalScene" in filenames
+    assert {"MinimalScene", "RovViewAxes", "RovImageView", "RovUnderwaterView"} <= set(filenames)
     assert root.find("plugin[@filename='MinimalScene']/engine").text == "ogre"
+    assert root.findtext("plugin[@filename='MinimalScene']/anti_aliasing") == "4"
+    assert root.find("window/style").attrib == scene.WINDOW_STYLE
+    assert root.findtext("plugin[@filename='RovUnderwaterView']/water_visual")
+
+
+def test_gui_config_for_software_display(tmp_path):
+    root = gui_root(scene.gui_config(DESCRIPTION, tmp_path / "gui.config", engine="ogre2"))
+    filenames = [p.get("filename") for p in root.findall("plugin")]
+    assert "posim_underwater_gui" in filenames and "RovUnderwaterView" not in filenames
+    assert root.find("plugin[@filename='MinimalScene']/engine").text == "ogre2"
+    assert root.find("window/style").get("material_theme") == "Light"
+
+
+def test_view_axes_sit_top_right_of_3d_view(tmp_path):
+    root = gui_root(scene.gui_config(DESCRIPTION, tmp_path / "gui.config"))
+    anchors = root.find("plugin[@filename='RovViewAxes']/gz-gui/anchors")
+    assert anchors.get("target") == "3D View"
+    assert {(l.get("own"), l.get("target")) for l in anchors} == {("right", "right"), ("top", "top")}
 
 
 def test_vehicle_description_resolves_meshes():

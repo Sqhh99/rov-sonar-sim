@@ -119,24 +119,59 @@ def build_world(description_share, output, model, pose=(0.0, 0.0, -3.1, 0.0)):
     return output
 
 
-def gui_config(description_share, output, engine="ogre"):
-    """Standalone GUI client configuration for the Parallels hybrid display.
+# Gazebo GUI theme (gz-gui <window><style>): white panels, Gazebo's orange top
+# bar and light-blue panel title bars. gz-gui uses the toolbar colours only
+# when both the light and dark variants are given.
+WINDOW_STYLE = {
+    "material_theme": "Light",
+    "material_primary": "#2F2F2F",
+    "material_accent": "#03A9F4",
+    **{f"toolbar_{k}_{theme}": v for theme in ("light", "dark")
+       for k, v in (("color", "#FF5722"), ("text_color", "#FFFFFF"))},
+    **{f"plugin_toolbar_{k}_{theme}": v for theme in ("light", "dark")
+       for k, v in (("color", "#03A9F4"), ("text_color", "#FFFFFF"))},
+}
+WINDOW_SIZE = (1280, 900)
 
-    The Ogre 1 display cannot load the Ogre 2 underwater optics panel; sensor
-    cameras keep those optics because they render on the server.
+
+def gui_config(description_share, output, engine="ogre"):
+    """Gazebo GUI configuration: the world's panels plus the window theme.
+
+    engine "ogre" is the Parallels hybrid display: the Ogre 1 view cannot load
+    the Ogre 2 underwater optics panel (sensor cameras keep those optics
+    because they render on the server), so it is dropped; a display-only
+    underwater look (fog, water colours) and anti-aliasing are added instead.
     """
     gui = ET.parse(world_file(description_share)).find("world/gui")
     plugins = []
     for plugin in gui:
-        if plugin.get("filename") == "posim_underwater_gui":
+        if engine == "ogre" and plugin.get("filename") == "posim_underwater_gui":
             continue
         plugin_engine = plugin.find("engine")
         if plugin_engine is not None:
             plugin_engine.text = engine
         plugins.append(plugin)
+    if engine == "ogre":
+        # GPU view: multisample anti-aliasing and the underwater look (fog,
+        # water colours) from extras/parallels; both are cheap on the GPU.
+        scene_plugin = next(p for p in plugins if p.get("filename") == "MinimalScene")
+        ET.SubElement(scene_plugin, "anti_aliasing").text = "4"
+        view = ET.SubElement(ET.Element("root"), "plugin", filename="RovUnderwaterView", name="Underwater view")
+        properties = ET.SubElement(view, "gz-gui")
+        for key, kind, value in [
+            ("state", "string", "floating"),
+            ("showTitleBar", "bool", "false"),
+            ("resizable", "bool", "false"),
+            ("width", "double", "0"),
+            ("height", "double", "0"),
+        ]:
+            ET.SubElement(properties, "property", type=kind, key=key).text = value
+        ET.SubElement(view, "water_visual").text = "waves::base_link::visual"
+        plugins.append(view)
     window = ET.Element("window")
-    ET.SubElement(window, "width").text = "1200"
-    ET.SubElement(window, "height").text = "1000"
+    ET.SubElement(window, "width").text = str(WINDOW_SIZE[0])
+    ET.SubElement(window, "height").text = str(WINDOW_SIZE[1])
+    ET.SubElement(window, "style", WINDOW_STYLE)
     Path(output).write_text(
         "\n".join(ET.tostring(e, encoding="unicode") for e in [window] + plugins) + "\n"
     )

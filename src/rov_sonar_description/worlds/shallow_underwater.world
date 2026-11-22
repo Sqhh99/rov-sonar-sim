@@ -35,6 +35,7 @@
       <specular>.3 .3 .3 1</specular>
       <direction>.3 .2 -1</direction>
       <cast_shadows>true</cast_shadows>
+      <visualize>false</visualize>
     </light>
     <scene>
       <grid>false</grid>
@@ -216,7 +217,7 @@
         <engine>ogre2</engine>
         <scene>scene</scene>
         <ambient_light>0.4 0.4 0.4</ambient_light>
-        <background_color>0.8 0.8 0.8</background_color>
+        <background_color>0.86 0.9 0.93</background_color>
         <camera_pose>-3 -4 -2.1 0 .165 .588</camera_pose>
         <camera_clip>
           <near>.05</near>
@@ -305,23 +306,39 @@
         <real_time_factor>true</real_time_factor>
         <iterations>true</iterations>
       </plugin>
-      <plugin filename="ImageDisplay" name="Camera">
+      <plugin filename="RovViewAxes" name="View axes">
+        <gz-gui>
+          <title>View axes</title>
+          <property type="bool" key="showTitleBar">false</property>
+          <property type="bool" key="resizable">false</property>
+          <property type="double" key="width">84</property>
+          <property type="double" key="height">84</property>
+          <property type="double" key="z">1</property>
+          <property type="string" key="state">floating</property>
+          <anchors target="3D View">
+            <line own="right" target="right" />
+            <line own="top" target="top" />
+          </anchors>
+        </gz-gui>
+        <topic>/gui/camera/pose</topic>
+      </plugin>
+      <plugin filename="RovImageView" name="Camera">
         <gz-gui>
           <title>Camera</title>
           <property type="string" key="state">docked</property>
+          <property type="bool" key="showTitleBar">false</property>
         </gz-gui>
         <topic>/rov/camera/image</topic>
-        <topic_picker>false</topic_picker>
-        <show_depth_flip>false</show_depth_flip>
+        <window_color>#101010</window_color>
       </plugin>
-      <plugin filename="ImageDisplay" name="Sonar">
+      <plugin filename="RovImageView" name="Sonar">
         <gz-gui>
           <title>Sonar</title>
           <property type="string" key="state">docked</property>
+          <property type="bool" key="showTitleBar">false</property>
         </gz-gui>
         <topic>/rov/sonar/fan_image</topic>
-        <topic_picker>false</topic_picker>
-        <show_depth_flip>false</show_depth_flip>
+        <window_color>#202020</window_color>
       </plugin>
     </gui>
   </world>

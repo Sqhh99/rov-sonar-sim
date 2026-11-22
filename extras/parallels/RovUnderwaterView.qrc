@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="RovUnderwaterView">
+    <file>RovUnderwaterView.qml</file>
+  </qresource>
+</RCC>

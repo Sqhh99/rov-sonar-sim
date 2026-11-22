@@ -3,7 +3,7 @@ project(rov_sonar_bringup)
 
 find_package(ament_cmake REQUIRED)
 
-install(PROGRAMS scripts/sonar_view.py DESTINATION lib/${PROJECT_NAME})
+install(PROGRAMS scripts/sonar_view.py scripts/sonar_window.py DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY launch rviz DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)

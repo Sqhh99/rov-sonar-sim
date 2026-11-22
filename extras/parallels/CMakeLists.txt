@@ -29,3 +29,14 @@ add_library(posim_static_water SHARED static_water.cc)
 target_compile_features(posim_static_water PRIVATE cxx_std_17)
 target_link_libraries(posim_static_water PRIVATE gz-sim::gz-sim gz-plugin::register)
 set_target_properties(posim_static_water PROPERTIES OUTPUT_NAME gz-waves1-waves-visual-system)
+
+# GUI plugin: underwater look (fog, colours, water surface) for the Ogre 1 view.
+find_package(gz-gui REQUIRED)
+qt_add_resources(UNDERWATER_VIEW_QML RovUnderwaterView.qrc)
+add_library(RovUnderwaterView SHARED underwater_view.cc ${UNDERWATER_VIEW_QML})
+target_compile_features(RovUnderwaterView PRIVATE cxx_std_17)
+target_include_directories(RovUnderwaterView PRIVATE /usr/include/OGRE/RTShaderSystem)
+target_link_libraries(RovUnderwaterView PRIVATE
+  gz-gui::gz-gui gz-rendering::gz-rendering gz-plugin::register PkgConfig::OGRE
+  OgreRTShaderSystem)
+set_target_properties(RovUnderwaterView PROPERTIES PREFIX "")

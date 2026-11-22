@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="RovViewAxes">
+    <file>RovViewAxes.qml</file>
+  </qresource>
+</RCC>

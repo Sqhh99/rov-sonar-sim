@@ -57,3 +57,32 @@ def test_invalid_geometry_is_rejected():
         view.FanRenderer().render(db, ranges[::-1], bearings)
     with pytest.raises(ValueError):
         view.FanRenderer().render(db[:, :-1], ranges, bearings)
+
+
+def test_dark_page_and_plain_readout():
+    db, ranges, bearings = scan()
+    db[34:37, 27:30] = -30
+    renderer = view.FanRenderer()
+    image = renderer.render(db, ranges, bearings, gain=3, dynamic_range=35)
+    outside = image[~renderer.mask].astype(int)
+    # The page around the fan is dark gray (never white) apart from text.
+    assert np.median(outside, axis=0).tolist() == list(view.PAGE)
+    # Readout: light text directly on the page in the top-left corner.
+    corner = image[8:70, 8:300].astype(int)
+    assert corner.max() > 200 and np.median(corner) == view.PAGE[0]
+    assert image[renderer.height - 2, 2].tolist() == list(view.PAGE)
+
+
+def test_amber_gold_palette():
+    lut = view.palette_lut("amber").astype(int)
+    assert lut[0].tolist() == [0, 0, 0]
+    assert np.all(np.diff(lut.sum(axis=1)) >= 0)  # Brightness rises monotonically.
+    r, g, b = lut[160]
+    assert r > g > b  # Amber/gold hue through the mid range.
+    assert lut[-1].min() > 190  # Strongest echoes approach pale gold.
+
+
+def test_range_rings_are_round_numbers():
+    assert view.ring_step(10.0) == 2
+    assert view.ring_step(30.0) == 5
+    assert view.ring_step(4.0) == 1

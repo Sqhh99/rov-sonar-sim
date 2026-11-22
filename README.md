@@ -4,7 +4,7 @@ Simulation, teleoperation and sonar imaging for an underwater robot (BlueROV2 He
 
 - **Simulation**: Gazebo Jetty, a 4 m shallow inspection site (seabed plus pillar, box, pipe and sphere targets), hydrodynamics, buoyancy, 8 thrusters, IMU, GNSS, camera and multibeam sonar.
 - **Control**: ArduSub SITL + MAVROS with keyboard (or web joystick) manual control.
-- **Imaging**: the multibeam sonar plugin (CPU / WGPU / CUDA backends) publishes raw echoes; the `sonar_view` node renders them as a fan image with range rings and bearing ticks.
+- **Imaging**: the multibeam sonar plugin (CPU / WGPU / CUDA backends) publishes raw echoes; the `sonar_view` node renders them as an Amber/Gold fan image with range arcs, sector lines and range labels.
 
 Environment: Ubuntu 26.04 ARM64 (Parallels VM), ROS 2 Lyrical, Gazebo Jetty.
 
@@ -19,15 +19,17 @@ rov-sonar-sim/
 ├── test.sh                   # Run the tests
 ├── scripts/env.sh            # Load the ROS environment and this workspace
 ├── scripts/fetch-deps.sh     # Fetch source dependencies (ros_gz 3.0.12) into deps/
-├── extras/parallels/         # Build recipe for the Parallels GPU display plugin (Ogre 1)
+├── extras/parallels/         # Parallels GPU display: Ogre 1 render plugin and underwater look
 └── src/
     ├── rov_sonar_bringup/    # Launch files, scene generation, sonar fan viewer, RViz preset
     │   ├── launch/sim.launch.py      # Main simulation entry point
     │   ├── launch/hybrid.launch.py   # Parallels hybrid entry point (includes sim.launch.py)
-    │   ├── launch/scene.py           # World generation: robot setup, sonar profiles, GUI config
-    │   └── scripts/sonar_view.py     # Raw echoes -> fan image
+    │   ├── launch/scene.py           # World generation: robot setup, sonar profiles, GUI config and theme
+    │   ├── scripts/sonar_view.py     # Raw echoes -> fan image
+    │   └── scripts/sonar_window.py   # Standalone sonar window
     ├── rov_sonar_control/    # ArduSub/MAVROS vehicle stack, keyboard/web teleop, GNSS input
-    ├── rov_sonar_description/# Robot model, meshes, shallow-water world
+    ├── rov_sonar_description/# Robot model, meshes, shallow-water world (and its Gazebo GUI layout)
+    ├── rov_sonar_gui/        # Gazebo GUI plugins: XYZ view axes, camera/sonar panels with pop-out windows
     └── simulator/            # Gazebo plugins copied from POSIM
         ├── multibeam_sonar/          # Multibeam sonar sensor
         ├── multibeam_sonar_system/   # Sonar system plugin (libmultibeam_sonar_system)
@@ -63,7 +65,8 @@ cd ~/workspace/ros2-workspace/rov-sonar-sim
                                  # (offline: copy an existing checkout, e.g.
                                  #  ./scripts/fetch-deps.sh ../POSIM/.local/deps/ros_gz)
 ./build.sh                       # Build the whole workspace
-./extras/parallels/build.sh      # First time: build the Parallels GPU display plugin into .local/runtime (needed by run.sh)
+./extras/parallels/build.sh      # First time (and after changes in extras/parallels): build the Parallels
+                                 # GPU display plugins into .local/runtime (needed by run.sh)
 ```
 
 Rebuild a single package:
@@ -81,8 +84,8 @@ CMAKE_BUILD_PARALLEL_LEVEL=4 MAKEFLAGS=-j4 CARGO_BUILD_JOBS=4 ./build.sh
 Run the tests (after building):
 
 ```bash
-./test.sh --packages-select rov_sonar_bringup rov_sonar_control   # launch, scene, imaging and teleop tests
-./test.sh                                                          # also the plugin tests copied from POSIM
+./test.sh --packages-select rov_sonar_bringup rov_sonar_control rov_sonar_gui   # launch, scene, imaging, GUI and teleop tests
+./test.sh                                                                        # also the plugin tests copied from POSIM
 ```
 
 ## Running
@@ -94,7 +97,11 @@ cd ~/workspace/ros2-workspace/rov-sonar-sim
 ./run.sh
 ```
 
-In hybrid mode the GPU draws the main Gazebo view (with simplified water-surface and underwater optics), while the camera and sonar are still rendered by the server with software Ogre 2 and the sonar is computed on the CPU. Defaults: `balanced` sonar profile at 5 Hz, display gain 3 dB, dynamic range 35 dB, amber palette, and a standalone sonar window. RViz is off, and the vehicle is not armed automatically.
+In hybrid mode the GPU draws the main Gazebo view, while the camera and sonar are still rendered by the server with software Ogre 2 (with underwater optics) and the sonar is computed on the CPU. Defaults: `balanced` sonar profile at 5 Hz, display gain 3 dB, dynamic range 35 dB, Amber/Gold palette. RViz and the standalone sonar window are off, and the vehicle is not armed automatically.
+
+The interface is a single window: the 3D view with an X/Y/Z orientation indicator in its top-right corner, the camera and sonar images stacked in a compact side panel, and the simulation controls along the bottom edge. The enlarge button at the right of each image's title bar opens that image in a separate window; closing the window (or pressing `Esc` in it, or the button again) returns it to the panel. The sonar image is drawn on a dark page: the fan with range arcs, sector lines and range labels, and the sonar data as plain text in the top-left corner.
+
+The GPU view adds an underwater look at fixed-function cost: per-pixel exponential fog in the water colour, blue-green ambient and sun light, a translucent water surface seen from below, and 4x multisample anti-aliasing. This changes only the display; the camera and sonar images are unaffected.
 
 Common arguments (`./run.sh --show-args` lists them all):
 
@@ -105,8 +112,8 @@ Common arguments (`./run.sh --show-args` lists them all):
 | `compute_backend` | `cpu` | `cpu`, `wgpu`, `cuda` or `auto` |
 | `sonar_gain_db` | `3.0` | Display gain, -30 to 30 dB |
 | `sonar_dynamic_range_db` | `35.0` | Display dynamic range, 20 to 100 dB |
-| `sonar_palette` | `amber` | `amber` or `gray` |
-| `sonar_window` | `true` (run.sh) | Standalone sonar window (rqt_image_view) |
+| `sonar_palette` | `amber` | `amber` (Amber/Gold) or `gray` |
+| `sonar_window` | `false` | Extra standalone sonar window (useful with `gui:=false`) |
 | `rviz` | `false` | Open RViz (robot model, camera, sonar image, point cloud) |
 | `ardusub` | `true` | Start ArduSub SITL and MAVROS; `false` runs only the simulation and sonar |
 | `camera_stream` | `false` | Send the camera to QGroundControl as H.264 over UDP (port `camera_stream_port`, default 5600) |
@@ -117,7 +124,6 @@ Examples:
 
 ```bash
 ./run.sh sonar_quality:=preview                    # Lower sonar load
-./run.sh sonar_window:=false                       # Keep only the Gazebo sidebar sonar panel
 ./run.sh sonar_gain_db:=6.0 sonar_dynamic_range_db:=40.0
 ```
 
@@ -165,7 +171,7 @@ Display parameters change only the rendered image, not the raw echoes. Changing 
 
 | Topic | Content |
 | --- | --- |
-| `/rov/sonar/fan_image` | Sonar fan image (range rings and bearing ticks; `L`/`R` are the robot's left/right) |
+| `/rov/sonar/fan_image` | Sonar fan image (range arcs, sector lines, range labels; the robot's left is on the image's left) |
 | `/model/bluerov2_heavy_multibeam_sonar/multibeam_sonar/sonar_image_raw` | Raw echoes (`marine_acoustic_msgs/ProjectedSonarImage`, float32 dB) |
 | `/model/bluerov2_heavy_multibeam_sonar/multibeam_sonar/sonar_image` | The sensor's built-in colour preview |
 | `/model/bluerov2_heavy_multibeam_sonar/multibeam_sonar/point_cloud` | Sonar point cloud |
@@ -178,13 +184,14 @@ Gazebo topics live in a `GZ_PARTITION` that is unique per launch (`rov_sonar_<pi
 
 ### Stopping
 
-In terminal B press `x` to disarm, then `Ctrl+C`. Close the Gazebo window or press `Ctrl+C` in terminal A. Closing only the sonar window does not stop the simulation.
+In terminal B press `x` to disarm, then `Ctrl+C`. Close the Gazebo window or press `Ctrl+C` in terminal A. Closing a pop-out camera or sonar window only returns it to the panel.
 
 ## Development notes
 
 - **Scene generation**: `launch/scene.py` reads the model and world from `rov_sonar_description`, applies the sonar profile, camera settings and neutral-buoyancy ballast, and embeds the robot directly in the generated world file (no spawn service needed). The installed model and world files are not modified. To add a profile, edit `SONAR_PROFILES`.
 - **Sonar sensor parameters**: `<gz:multibeam_sonar>` in `src/rov_sonar_description/models/bluerov2_heavy_multibeam_sonar/model.sdf` (frequency, bandwidth, source level, field of view, ...).
-- **Sonar imaging**: `src/rov_sonar_bringup/scripts/sonar_view.py`; tests in `test/test_sonar_view.py`.
+- **Sonar imaging**: `src/rov_sonar_bringup/scripts/sonar_view.py` (palette in `AMBER_STOPS`, page and text colours at the top of the file); tests in `test/test_sonar_view.py`.
+- **Interface style**: window theme in `WINDOW_STYLE` (`launch/scene.py`); panel layout in the `<gui>` block of `src/rov_sonar_description/worlds/shallow_underwater.world`; the axes indicator (`RovViewAxes`) and image panels (`RovImageView`) in `src/rov_sonar_gui`; the GPU view's underwater look (fog density and colours) in `extras/parallels/underwater_view.cc` (rebuild with `./extras/parallels/build.sh`).
 - **Vehicle stack**: `src/rov_sonar_control/launch/vehicle.launch.py` (Gazebo bridges → wait for IMU → ArduSub → MAVROS).
 - **Main differences from POSIM**: Gazebo is started directly and the robot is embedded in the world file, so `ros_gz_sim`'s launch file and spawn service are no longer needed; topics `/tutorial/*` were renamed to `/rov/*`; the QGroundControl camera stream is optional (off by default); new `full` sonar profile and `sonar_rate` / `sonar_palette` arguments.
 
@@ -192,7 +199,7 @@ In terminal B press `x` to disarm, then `Ctrl+C`. Close the Gazebo window or pre
 
 | Symptom | Check |
 | --- | --- |
-| `run.sh` reports a missing display plugin | Run `./extras/parallels/build.sh` |
+| `run.sh` reports a missing display plugin | Run `./extras/parallels/build.sh` (again after updating the project) |
 | ROS packages not found | Run `./build.sh` first, then `source scripts/env.sh` in the current terminal |
 | Keys have no effect | Make sure terminal B has focus, `/mavros/state` shows `connected: true`, and the vehicle is armed |
 | Simulation is sluggish | Use `sonar_quality:=preview`; close RViz and windows you don't need |
