@@ -1,0 +1,50 @@
+rov-sonar-sim
+=============
+
+This project was extracted from POSIM — Platform for Ocean Simulation
+(https://github.com/IOES-Lab/POSIM), maintained by IOES Lab., Korea Maritime &
+Ocean University (KMOU). Source snapshot: POSIM commit 689e923d (2026-11-20)
+plus the local, uncommitted sonar viewer and sonar quality profile changes in
+that working tree.
+
+POSIM-authored source is licensed under the Apache License 2.0 (see LICENSE).
+POSIM includes source from Project DAVE (https://github.com/Field-Robotics-Lab/dave);
+those files keep their original author and copyright notices.
+
+Contents taken from POSIM
+-------------------------
+src/simulator/multibeam_sonar         gazebo/posim_gz_multibeam_sonar/multibeam_sonar (unchanged
+                                      except an unused posim_interfaces dependency removed)
+src/simulator/multibeam_sonar_system  gazebo/posim_gz_multibeam_sonar/multibeam_sonar_system
+src/simulator/wgpu_vendor             gazebo/posim_gz_multibeam_sonar/wgpu_vendor
+src/simulator/posim_gz_gnss           gazebo/posim_gz_gnss (see its LICENSE / NOTICE)
+src/simulator/posim_gz_rendering      gazebo/posim_gz_rendering
+src/rov_sonar_description             models/posim_robot_models (BlueROV2 Heavy + sonar model,
+                                      bluerov2_heavy and t200 meshes),
+                                      models/posim_sensor_models (blueview_p900 meshes),
+                                      models/posim_worlds (shallow_underwater world, calm_waves)
+src/rov_sonar_control                 models/posim_robot_models (ArduSub/MAVROS configuration,
+                                      teleop scripts, marine GNSS input, tests),
+                                      extras/virtual_joystick.html
+src/rov_sonar_bringup                 examples/posim_demos (tutorial model configuration,
+                                      sonar_view.py, RViz preset, tests),
+                                      extras/parallels/hybrid.launch.py
+extras/parallels                      extras/parallels (Parallels Ogre 1 display plugin recipe)
+
+The launch files in src/rov_sonar_bringup and src/rov_sonar_control were
+rewritten from POSIM's posim_robot.launch.py, upload_robot.launch.py,
+config/bluerov2_heavy_multibeam_sonar/robot_config.py,
+underwater_tutorial.launch.py and bluerov_teleop.launch.py.
+
+Source dependency fetched by scripts/fetch-deps.sh (not included)
+-----------------------------------------------------------------
+deps/ros_gz   https://github.com/yeseorizi/ros_gz.git @ c38a35d (ros_gz 3.0.12
+              plus POSIM's launch fix; Apache-2.0). Only ros_gz_bridge and
+              ros_gz_interfaces are built.
+
+External runtime dependencies (not included)
+--------------------------------------------
+ROS 2 Lyrical, Gazebo Jetty, ArduSub SITL and ardupilot_gazebo (GPL-3.0),
+Wave Sim / asv_wave_sim (GPL), MAVROS, and the POSIM rendering-compat build of
+gz-rendering. They are installed system-wide by POSIM's installer and loaded
+through ~/.ros_ardusub_env/env.

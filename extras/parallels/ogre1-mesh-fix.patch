@@ -1,0 +1,11 @@
+--- a/ogre/src/OgreMeshFactory.cc
++++ b/ogre/src/OgreMeshFactory.cc
+@@ -448,7 +448,7 @@
+       // Unlock
+       vBuf->unlock();
+       iBuf->unlock();
+-      if (subMesh.TexCoordCount() > 0)
++      if (!texBuf.isNull())
+       {
+         texBuf->unlock();
+       }

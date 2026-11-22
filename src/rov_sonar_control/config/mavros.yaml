@@ -1,0 +1,37 @@
+mavros:
+  ros__parameters:
+    system_id: 255
+    plugin_allowlist:
+      - sys_status
+      - command
+      - manual_control
+      - imu
+      - rc_io
+      - param
+      - local*
+      - global_position
+      - gps_input
+
+mavros_node:
+  ros__parameters:
+    fcu_url: "tcp://127.0.0.1:5760"
+    gcs_url: "udp://@localhost:14550"
+
+mavros/local_position:
+  ros__parameters:
+    frame_id: "map"
+    tf:
+      send: false
+
+mavros/sys:
+  ros__parameters:
+    # SITL heartbeats follow simulation time; MAVROS times out in wall time.
+    # Allow slow software rendering without repeatedly losing the ROS connection.
+    conn_timeout: 60.0
+
+mavros/gps_input:
+  ros__parameters:
+    # This clock only throttles transmission. Measurement stamps remain sim time.
+    # A wall clock lets the MAVROS plugin continue sending after a world reset.
+    use_sim_time: false
+    gps_rate: 20.0

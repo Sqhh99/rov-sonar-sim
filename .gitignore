@@ -1,0 +1,17 @@
+# colcon
+/build/
+/install/
+/log/
+# Source dependencies fetched by scripts/fetch-deps.sh
+/deps/
+# Local runtime: Parallels display plugin, ArduSub working files, captures
+/.local/
+eeprom.bin
+logs/
+# Python
+__pycache__/
+*.pyc
+# Editors / OS
+.vscode/
+*.swp
+.DS_Store

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>rov_sonar_description</name>
+  <version>0.1.0</version>
+  <description>
+    BlueROV2 Heavy with a forward-looking multibeam sonar, its meshes and the
+    shallow-water inspection world. Derived from POSIM (IOES Lab, KMOU).
+  </description>
+  <maintainer email="Sqhh99@users.noreply.github.com">Sqhh99</maintainer>
+  <license>Apache-2.0</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <exec_depend>multibeam_sonar_system</exec_depend>
+  <exec_depend>posim_gz_gnss</exec_depend>
+  <exec_depend>posim_gz_rendering</exec_depend>
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>
